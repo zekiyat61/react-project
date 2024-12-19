@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 const App = () => {
@@ -10,22 +10,17 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-  const fetchMovies = async () => {
-    const url = search
-      ? `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${search}`
+  const fetchMovies = async (query = "") => {
+    const url = query
+      ? `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}`
       : `${BASE_URL}/discover/movie?api_key=${API_KEY}`;
 
     try {
       setIsLoading(true);
       setError("");
-
       const response = await axios.get(url);
       setMovies(response.data.results || []);
     } catch (err) {
-      setIsLoading(false);
       setError("Could not fetch movies. Please try again.");
       setMovies([]);
     } finally {
@@ -33,26 +28,47 @@ const App = () => {
     }
   };
 
+  useEffect(() => {
+    fetchMovies();
+  }, []);
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    if (error) setError(""); 
+  };
+
+  const handleSearchClick = () => {
+    if (!search.trim()) {
+      setError("Please enter a movie name.");
+      return;
+    }
+    fetchMovies(search);
+  };
+
   return (
     <div className="container">
+        <header className="nav">
+       <h1 className="h1">MovieNest</h1>
+         <div className="input-group">
+    <input
+      type="text"
+      placeholder="Search movie"
+      value={search}
+      onChange={handleSearch}
+    />
+    <button className="button" onClick={handleSearchClick}>
+      Search
+    </button>
+     </div>      
+   </header> 
       <div className="main">
-        <h1 className="h1">Movie Search App</h1>
-        <div>
-          <input
-            type="text"
-            placeholder="Search movie"
-            value={search}
-            onChange={handleSearch}
-          />
-          <button className="button" onClick={fetchMovies}>Search</button>
-          {error && <p className="error">{error}</p>}
-        </div>
         {isLoading && <p>Loading...</p>}
+       {error && <p className="error">{error}</p>}
         <div className="movies-container">
           {movies.length > 0 ? (
             movies.map((movie) => (
               <div key={movie.id} className="movie-card">
-                <img
+                <img className="img"
                   src={
                     movie.poster_path
                       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
